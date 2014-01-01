@@ -1,0 +1,478 @@
+Linux frequently used command v1.0 
+by peiyuan.sun (buaaspy@gmail.com)
+
+1. network
+   
+   config CentOS DHCP | STATIC
+     1) Editor -> Virtual Network Editor -> Restore default -> VMnet0 -> Bridged to [Automatic]
+     2) VM -> setting -> Network Adapter -> Bridged 
+     3) vim /etc/sysconfig/network-scripts/ifcfg-eth0 
+        BOOTPROTO=dhcp
+        --------------
+        BOOTPROTO=static
+        IPADDR=172.18.9.2
+        NETMASK=255.255.255.0
+        GATEWAY=172.18.9.1
+      4) :>/etc/sysconfig/networks
+      5) vim /etc/resolv.conf
+      6) service network restart | /etc/init.d/network restart
+      7) ifconfig
+
+   config Ubuntu NAT
+      1) vmware -> Edit -> Virtual Network Editor -> VMnet8 -> NAT setting -> GatewayIP:192.168.74.2
+      2) VM -> settings -> Network Adapter -> NAT
+      3) sudo vim /etc/network/interfaces
+         iface eth0 inet static
+         address 192.168.74.10
+         netmask 255.255.255.0
+         gateway 192.168.74.2
+  
+         sudo vim /etc/resolv.conf
+         nameserver 192.168.74.2
+      4) sudo /etc/init.d/networking restart
+      5) ping www.baidu.com  
+   
+   config SSH 
+       A: 192.168.1.2 hadoop master
+       B: 192.168.1.3 hadoop slave
+
+       /etc/sysconfig/network 
+           -- HOSTNAME=master @A
+           -- HOSTNAME=slave  @B
+           -- source /etc/sysconfig/network @AB
+       /etc/hosts
+           -- 192.168.1.2 master @A
+           -- 192.168.1.3 slave  @B      
+
+       1) [hadoop@master] $ ssh-keygen -t rsa -f ~/.ssh/id_rsa
+       2) [hadoop@master] $ cd .ssh && scp id_rsa.pub hadoop@slave:/home/hadoop/.ssh/authorized_keys
+       3) [hadoop@slave]  $ chmod 644 authorized_keys id_rsa.pub
+       4) [hadoop@master] $ ssh slave
+                 
+
+   :>/etc/udev/rules.d/70-persistent-net.rules && reboot 
+       -- if no network-card is found in VMware 
+
+   ifconfig 
+       -- list all network configurations
+
+   if[down|up] eth0 
+       -- disable and enable eth0
+
+   ifconfig eth0 192.168.1.2 netmask 255.255.255.0 
+       -- config network parameters temporarily
+
+   route -n  
+       -- list IP routing table
+       -- -n show numerical addresses instead of trying to determine symbolic host names
+
+   ping [-c 4] 172.18.9.1
+       -- test connection
+
+   traceroute [-n] www.baidu.com
+       -- trace each router during the path
+
+   netstat -tulp
+       -- list all listening server program name via TCP/UDP 
+
+   host www.baidu.com
+       -- query IP address of given Host name
+
+   nslookup www.google.com
+       - similar to host
+
+   dig -t [A | NS | SOA] www.baidu.com [@server]
+       --   A: query IP of host
+       --  NS: query domain DNS server and its IP
+       -- SOA: query DNS master server information
+
+   telnet 192.168.1.2
+       -- remote login
+
+   ftp 125.219.124.77
+       -- [get | put] path-to-remote-file
+       -- bye
+
+   wget http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.39.tar.bz2
+       -- download
+
+   curl http://www.baidu.com
+       -- download html 
+
+   scp /home/administrator/news.txt root@192.168.6.129:/etc/squid
+       -- copy file from local to remote
+ 
+   scp remote@127.0.0.1:/usr/local/sin.sh /home/administrator
+       -- download file from remote host to localhost   
+
+
+2. package
+
+   yum source
+       1) cd /etc/yum.repos.d/
+       2) wget http://mirrors.163.com/.help/CentOS6-Base-163.repo
+       3) mv CentOS-Base.repo CentOS-Base.bak
+       4) mv CentOS6-Base-163.repo CentOS-Base.repo
+       5) yum clean all && yum makecache
+       6) yum -y install gcc g++ make cmake
+
+   yum local cdrom
+       1) mkdir -p /mnt/cdrom
+       2) vm -> removeable device -> cd/dvd -> settings -> use iso image file (connect)
+       3) mount -t iso9660 /dev/cdrom /mnt/cdrom
+       4) vim /etc/yum.repos.d/CentOS-Media.repo
+          baseurl=file:///mnt/cdrom/
+          yum --disablerepo=\* --enablerepo=c6-media -y install emacs   
+
+   compress | uncompress
+       tar cvf file.tar filediretory/ 
+       tar xvf filename.tar 
+   
+   RPM
+       rpm -ivh eruby-devel-0.9.8-2.i386.rpm 
+          -- install RPM package
+       
+       rpm -Uvh eruby-devel-0.9.8-2.i386.rpm
+          -- update RPM package     
+   
+       rpm -e package
+          -- erease RPM package
+   
+       rpm -q package
+          -- query RPM package
+ 
+       rpm -qa package
+          -- list all installed RPM package
+
+       rpm -qi package
+          -- query detailed information of RPM package
+
+   install from source
+       1) ./configure --prefix=/usr/local/lxc
+       2) make
+       3) make install
+
+   diff && patch
+       diff -Naur original/ modified/ > debug.patch
+       patch -p0 debug.patch
+   
+   chkconfig
+       !! make sure your service start scipt lies in /etc/init.d/ !!
+       chkconfig --list
+         -- list all service
+       chkconfig --add httpd
+         -- add httpd service at all levles
+       chkconfig --del httpd
+         -- remove httpd service
+       chkconfig --level httpd 2345 on
+         -- add httpd service at level 2345
+       chkconfig --list mysqld
+         -- list mysqld service level
+       chkconfig mysqld on
+         -- config mysql start at all levels 
+
+
+3. file
+
+       cd /very/very/deep/file/directory
+         -- cd directly to destination
+     
+       cd - 
+         -- back to last recent directory 
+ 
+       cd ~ | cd
+         -- back to home directory
+   
+       cd /some/other/direcoty; sh command.sh
+         -- combind cd and exe after which still stay where you were
+
+       pwd
+         -- print working directory
+
+       touch file
+         -- update file last-access-time if file exist otherwise create it
+
+       [which | whereis | locate] file
+         -- query file use DB
+
+       file filename
+         -- probe file type
+
+       mkdir | rmdir
+         -- create | remove directory
+
+       [cat | more | less | head | tail] file
+         -- print file content
+   
+       cp [-r] [/source-directory]/file [/destinate-directory]/file
+         -- copy file [recusively]
+  
+       mv /source-directory /destinate-directory
+         -- move(rename) file
+
+       rm [-rf] [/some-directory]/file
+         -- remove file [recursively] [forcely]
+    
+       wc -l filename
+         -- count line number of a file
+
+       sort
+         1) sort -u dat
+              -- unique
+         2) sort -t":" -k 2rn data
+              -- use ':' as field seperator and sort based on the 2nd field in numeric reverse order
+         3) sort -t $'\t' -k 1.2, 1.3 -k 3rn -k 5rn data
+              -- sort first based on 1.2 to 1.3 then 3rd and 5th field according each order and manner
+
+       split
+         1) split -d -l 1000 bigtxt prefix
+              -- split file into 1000-line-sized script
+         2) split -b 20M bigtxt prefix
+              -- split according to specified size
+
+       sed
+         1) sed -n '3,7p' data
+              -- print 3 to 7 line 
+         2) sed -n '/START/,/END/p' data
+              -- print start-match to end-match
+         3) sed -n '/PATTERN/!p' data
+              -- print do-not-match content
+         4) sed -i.bak 's/foo/bar/g' data
+              -- commit replace directly on the original file
+         5) sed '/bar/!s/foo/bar/g' data
+              -- replace when not match 
+         6) sed -n 's/.*/\U&/p'
+              -- all transform to Uppercase
+            sed -n 's/.*/\u&/p'
+              -- leading-char of each word turns to Uppercase
+            sed -n 's/.*/\L&/p' 
+              -- all transform to lowercase
+            sed -n 's/.*/\l&/p' 
+              -- leading-char of each word turns to lowercase
+         7) sed -n '/pattern/Ip' data
+              -- ignore case
+
+       awk 
+         1) awk 'BEING{FS="[,:%]"}{print $1, $2, $3}' data
+              -- specify different delimiter 
+         2) awk 'BEGIN{FS="[,:%]";OFS=":"}'{print $1, $2, $3} data
+              -- specify output field delimiter
+         3) awk 'BEGIN{FS="[,:%]"};RS="\n";OFS=":"{print $1, $2, $3}' data
+              -- specify output record delimiter
+         4) awk 'BEGIN{FS="\t"}NR<=FNR{a[$1]=$4}NR>FNR{if($1 in a){print $1}else{print "FAIL"}}' a b
+              -- compare a and b
+
+       grep
+         1) grep pattern -r ./*
+              -- search file which matched pattern recursively
+ 
+         2) ps -e | grep -i nginx
+              -- ignore case
+   
+         3) grep -n "main" setup.py  
+              -- print line number
+
+         4) grep -v pattern -r ./*
+              -- reverse match
+
+       find
+         1) find .name "^a*"
+              -- find name
+         2) find . -type f -name "a"
+              -- filter file type 
+         3) find . -type f -amin -2
+              -- filter file access time
+       
+       xargs
+         1) find . -type f -amin -2 | xargs -i mv {} {}.bak
+              -- process each file
+         2) ps aux | grep nginx | xargs -i kill -9 {}
+              -- process ps
+
+       dd
+         1) dd if=/dev/zero of=hello.txt bs=100M count=1
+              -- create file with specified size
+         2) dd if=/dev/hdx of=/path/to/image count=1 bs=512
+              -- backup file with specified size
+    
+       cut
+         1) cut -c5 txt
+              -- extract the 5th char of each line
+         2) cut -c5- txt
+              -- extract 5th to end chars of each line
+         3) cut -c1,5,12 txt
+              -- extract 1st 5th 12nd char of each line
+         4) cut -c5-14 txt
+              -- extract 5th to 14th chars of each line
+         5) cut -d: -f1,4 txt
+              -- extract 1st 4th fields of each line according demiliter ":"
+
+       paste
+         1) paste -d':' file1 file2 file3
+              -- paste each file's content into one with delimiter ":"
+
+       join
+         1) join file1 file2
+              -- join files accoring to matched cols
+
+       uniq file
+          -- remove duplicate lines
+
+       tee
+         1) who | tee who.log
+              -- split program's output into screen and file
+
+       ln -s file link
+          -- create soft link to file
+
+
+4. permission
+
+   file permission
+       -- r: could read file content
+       -- w: could edit, add, modify file !! no delete !!
+       -- x: executable
+
+   directory permisson
+       -- r: list directory's content 
+       -- w: mkdir newdir | touch newfile | mv [file|dir] newname | mv [file|dir] ../position
+       -- x: cd dir
+
+   common scenario
+       1) cd dir
+            -- at least x
+
+       2) cat dir/file
+            -- at least x on dir && r on file
+
+       3) vi dir/file
+            -- at least x on dir && r and w on file
+
+       4) touch dir/file
+            -- at least w, x is preferred
+
+       5) cd dir; sh script
+            -- at least x on dir && x on script
+     
+
+   SUID | SGID | SBIT
+       -- SUID: 1) only executable program has SUID
+                2) user should have x permission
+                3) user would have runtime owner permission
+                e.g. ls -l /usr/bin/passwd
+ 
+       -- SGID: 1) only executable program has SUID
+                2) user should have x permission
+                3) user would have runtime group permission
+                e.g. ls -l /usr/bin/passwd
+
+                1) if user has r and x, then he can cd into this dir
+                2) user's effective group will become current dir's group
+                3) if user has w, then file created by user will has the same group as the dir
+
+       -- SBIT: 1) when user has w and x
+                2) only user and root can delete file or dir created by user
+                e.g. drwxrwxrwt.  26 root root  4096 Dec 11 21:41 tmp
+
+   finger
+       -- finger peiyuan.sun
+       -- Login: peiyuan.sun                      Name: 
+          Directory: /home/peiyuan.sun            Shell: /bin/bash
+          Never logged in.
+          No mail.
+          No Plan.
+
+   config
+      /etc/passwd /etc/group /etc/shadow
+
+   id peiyuan.sun 
+       -- uid=502(peiyuan.sun) gid=502(peiyuan.sun) groups=502(peiyuan.sun),100(users),503(group1)
+
+   groups peiyuan.sun
+       -- peiyuan.sun : peiyuan.sun users group1
+ 
+   usermod -a -G group2 peiyuan.sun
+       -- groups peiyuan.sun
+       -- peiyuan.sun : peiyuan.sun users group1 group2
+ 
+   chgrp | chown | chmod
+
+   useradd | passwd | userdel | groupadd | groupdel
+       -- useradd -G group1 peiyuan.sun 
+       -- useradd -s /sbin/nologin peiyuan.sun
+       -- userdel -r peiyuan.sun
+
+
+5. disk && filesystem
+
+   blkid
+       -- list block id   
+          /dev/sda1: UUID="566f1b7f-902e-4bc6-873a-316aff9c9726" TYPE="ext4"
+
+   /etc/fstab
+       -- UUID=566f1b7f-902e-4bc6-873a-316aff9c9726  /boot  ext4  defaults  1 2
+
+   df -h
+          Filesystem            Size  Used Avail Use% Mounted on
+	  /dev/sda6              12G  2.7G  9.0G  23% /
+          tmpfs                 504M   80K  504M   1% /dev/shm
+          /dev/sda1              97M   28M   65M  30% /boot
+          /dev/sdb1              20G  397M   19G   3% /home
+          /dev/sda2             5.0G  311M  4.4G   7% /var
+          /dev/sr0              3.6G  3.6G     0 100% /mnt/cdrom
+
+   fdisk -l 
+          Device    Boot      Start         End      Blocks   Id  System
+          /dev/sda1   *           1          13      102400   83  Linux           
+          /dev/sda2              13         666     5242880   83  Linux
+
+   du  
+       -- disk usage            
+
+   add disk 
+     1) fdisk -l                  # check if new /dev/sd* added
+     2) fdisk /dev/sdb            # format disk
+     3) mkfs.ext4 /dev/sdb        # format disk to ext4 fs type
+     4) dd if=/home of=/var/home  # backup  
+     5) mount /dev/sdb /home      # mount
+
+   add disk (LVM)
+     1) fdisk -l                  # check if new /dev/sd* added
+     2) fdisk format /dev/sdb to P + E
+     3) fdisk t change partition to LVM
+     4) pvcreate /dev/sdb1        # create multiple PV
+     5) vgcreate www /dev/sdb1 /dev/sdb2
+     6) lvcreate -L 3G -n crawl www
+     7) mkfs.ext4 /dev/www/crawl
+     8) mount /dev/www/crawl /home/www/crawl
+     9) add extra disk /dev/sdc
+     10) fdisk /dev/sdc
+     11) pvcreate /dev/sdc1 /dev/sdc2
+     12) vgextend www /dev/sdc1 /dev/sdc2
+     13) lvextend -L +10G /dev/www/crawl
+     14) umount /home//crawl
+     15) resize2fs /dev/www/crawl
+     16) mount /dev/www/crwal /home/crawl
+
+6. dev
+
+   github
+   1) bind your github account and email
+
+      git config --global user.name "buaaspy"
+      git config --global user.email "buaaspy@gmail.com"
+ 
+   2) config SSH
+
+      1) ssh-keygen -t rsa -C buaaspy@gmail.com
+      2) open->C:\Documents and Settings\Administrator\.ssh\id_rsa.pub->Ctrl-A Ctrl-C
+         https://github.com/buaaspy
+         |-- Account Settings -> SSH Public Keys -> Ctrl-V
+      3) ssh -T git@github.com
+      4) https://github.com/buaaspy -> repository -> New -> Anney
+      5) mkdir Anney; cd Anney; git init
+      6) git remote add origin git@github.com:buaaspy/Anney.git
+      7) git pull origin master
+      8) git add *
+         git commit -m "commit comment"
+      9) git push origin master
